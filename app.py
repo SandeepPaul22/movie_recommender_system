@@ -1,32 +1,36 @@
 import streamlit as st
 import pickle
 import requests
+import gdown
+import os
 
 def fetch_poster(movie_id):
-    url = "https://api.themoviedb.org/3/movie/{}?api_key=c7ec19ffdd3279641fb606d19ceb9bb1&language=en-US".format(movie_id)
-    data = requests.get(url)
-    data = data.json()
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=c7ec19ffdd3279641fb606d19ceb9bb1&language=en-US"
+    data = requests.get(url).json()
     poster_path = data['poster_path']
     full_path = "https://image.tmdb.org/t/p/w500/" + poster_path
     return full_path
 
 movies_file = st.file_uploader("Upload movies_list.pkl", type="pkl")
-similarity_file = st.file_uploader("Upload similarity.pkl", type="pkl")
 
-if not movies_file or not similarity_file:
-    st.warning("Please upload both 'movies_list.pkl' and 'similarity.pkl' files to continue.")
+SIMILARITY_FILE_ID = "1widMJC1iUWDw6C3qKRC3cdVt0vbfSpZV"
+
+similarity_path = "similarity_from_drive.pkl"
+if not os.path.exists(similarity_path):
+    gdown.download(f"https://drive.google.com/uc?id={SIMILARITY_FILE_ID}", similarity_path, quiet=False)
+
+if not movies_file:
+    st.warning("Please upload 'movies_list.pkl' file to continue.")
     st.stop()
 
-# ✅ Fixed: Load from uploaded files, not local disk
 movies = pickle.load(movies_file)
-similarity = pickle.load(similarity_file)
+similarity = pickle.load(open(similarity_path, 'rb'))
 
 movies_list = movies['title'].values
 
 st.header("Movie Recommender System")
 
 import streamlit.components.v1 as components
-
 imageCarouselComponent = components.declare_component("image-carousel-component", path="frontend/public")
 
 imageUrls = [
